@@ -1,0 +1,1288 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Akward Thursday - Prediction Market</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        awkward: {
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            400: '#818cf8',
+                            glow: 'rgba(99, 102, 241, 0.25)'
+                        },
+                        emeraldAccent: {
+                            500: '#10b981',
+                            400: '#34d399'
+                        },
+                        dark: {
+                            950: '#0b0f17',
+                            900: '#111827',
+                            800: '#1f2937',
+                            700: '#374151',
+                            600: '#4b5563'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #0b0f17;
+            color: #f9fafb;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #111827;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #374151;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #6366f1;
+        }
+        .odds-btn {
+            transition: all 0.15s ease-in-out;
+        }
+        .odds-btn.selected {
+            background-color: #6366f1 !important;
+            color: #ffffff !important;
+            border-color: #818cf8 !important;
+            box-shadow: 0 0 15px rgba(99, 102, 241, 0.4);
+        }
+        .odds-btn.selected span {
+            color: #ffffff !important;
+        }
+        .glass-header {
+            background: rgba(17, 24, 39, 0.85);
+            backdrop-filter: blur(16px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col antialiased selection:bg-awkward-500 selection:text-white">
+
+    <!-- SIGN IN MODAL -->
+    <div id="auth-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md hidden">
+        <div class="bg-dark-900 border border-dark-700 rounded-3xl p-6 md:p-8 max-w-md w-full space-y-6 shadow-2xl relative">
+            <div class="text-center space-y-2">
+                <div class="w-14 h-14 bg-awkward-500/20 text-awkward-400 rounded-2xl border border-awkward-500/30 flex items-center justify-center mx-auto text-2xl font-black shadow-lg shadow-awkward-500/20">
+                    <i class="fa-solid fa-microphone-lines"></i>
+                </div>
+                <h2 class="text-2xl font-black text-white tracking-tight">Akward Thursday</h2>
+                <p class="text-xs text-gray-400">Sign in to join the prediction market. New users start with a $1,000.00 bankroll.</p>
+            </div>
+
+            <form id="auth-form" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-gray-400 mb-1.5">Your Name / User ID</label>
+                    <div class="relative">
+                        <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500"><i class="fa-solid fa-user"></i></span>
+                        <input type="text" id="auth-username" placeholder="e.g. Josiah, Humphrey, Jacob..." class="w-full bg-dark-800 border border-dark-700 rounded-xl py-3 pl-10 pr-4 text-sm text-white focus:outline-none focus:border-awkward-500 transition-colors" required>
+                    </div>
+                </div>
+
+                <button type="submit" class="w-full bg-awkward-500 hover:bg-awkward-600 text-white font-extrabold py-3.5 rounded-xl transition-all shadow-lg shadow-awkward-500/25 flex items-center justify-center gap-2">
+                    <span>ENTER PREDICTION MARKET</span>
+                    <i class="fa-solid fa-arrow-right text-xs"></i>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- TOP NAVIGATION HEADER -->
+    <header class="sticky top-0 z-40 glass-header px-4 lg:px-8 py-3">
+        <div class="max-w-7xl mx-auto flex items-center justify-between gap-4">
+            
+            <div class="flex items-center gap-3 cursor-pointer" id="brand-logo-btn">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-awkward-400 to-awkward-600 flex items-center justify-center font-black text-white text-xl shadow-lg shadow-awkward-500/20">
+                    <i class="fa-solid fa-microphone-lines"></i>
+                </div>
+                <div>
+                    <h1 class="font-black text-lg sm:text-xl tracking-tight text-white leading-none">AKWARD<span class="text-awkward-400">THURSDAY</span></h1>
+                    <span class="text-[10px] text-gray-400 font-mono tracking-widest uppercase">Custom Odds & Timeline Market</span>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-2 sm:gap-3">
+                <div id="user-profile-badge" class="bg-dark-900 border border-dark-700 rounded-xl px-3 py-1.5 flex items-center gap-2.5 cursor-pointer hover:border-dark-600 transition-all">
+                    <div id="user-avatar-display" class="w-7 h-7 rounded-lg bg-awkward-500/20 text-awkward-400 flex items-center justify-center font-bold text-xs">
+                        <i class="fa-solid fa-user"></i>
+                    </div>
+                    <div class="text-left">
+                        <div id="user-name-display" class="text-xs font-bold text-white truncate max-w-[80px] sm:max-w-[120px]">Guest</div>
+                        <div id="user-balance-display" class="text-[11px] font-mono font-bold text-emeraldAccent-400">$0.00</div>
+                    </div>
+                </div>
+
+                <div class="bg-dark-900 border border-dark-700 p-1 rounded-xl flex items-center gap-1">
+                    <button id="nav-markets-btn" class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all bg-awkward-500 text-white shadow-md">
+                        <i class="fa-solid fa-layer-group sm:mr-1"></i> <span class="hidden sm:inline">Markets</span>
+                    </button>
+                    <button id="nav-create-btn" class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all text-gray-400 hover:text-white">
+                        <i class="fa-solid fa-plus-circle sm:mr-1"></i> <span class="hidden sm:inline">Line Maker</span>
+                    </button>
+                    <button id="nav-leaderboard-btn" class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all text-gray-400 hover:text-white">
+                        <i class="fa-solid fa-trophy sm:mr-1"></i> <span class="hidden sm:inline">Users</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN APP CONTAINER -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-4 md:p-6">
+        
+        <!-- VIEW 1: PREDICTION MARKETS BOARD -->
+        <div id="markets-view" class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            
+            <!-- Left Sidebar -->
+            <aside class="lg:col-span-3 space-y-4">
+                <div class="bg-dark-900 border border-dark-700 rounded-2xl p-4">
+                    <div class="flex items-center justify-between mb-3 px-1">
+                        <h3 class="text-xs font-bold uppercase text-gray-400 tracking-wider">Market Types</h3>
+                        <span class="text-[10px] font-mono text-awkward-400" id="active-markets-count">0 Open</span>
+                    </div>
+                    <nav class="space-y-1" id="filter-nav">
+                        <!-- Filters rendered dynamically -->
+                    </nav>
+                </div>
+
+                <div class="bg-dark-900 border border-dark-700 rounded-2xl p-4">
+                    <div class="flex items-center justify-between mb-3">
+                        <h3 class="text-xs font-bold uppercase text-gray-400 tracking-wider">My Wagers</h3>
+                        <span id="user-pending-count" class="text-xs font-mono bg-awkward-500/20 text-awkward-400 font-semibold px-2 py-0.5 rounded-full">0 Pending</span>
+                    </div>
+                    <div id="user-wagers-list" class="space-y-2 text-xs text-gray-400 max-h-64 overflow-y-auto pr-1">
+                        <!-- User wagers injected here -->
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Center Feed: Cards Container -->
+            <section class="lg:col-span-5 space-y-4">
+                <div class="flex items-center justify-between bg-dark-900 p-3.5 rounded-2xl border border-dark-700">
+                    <h2 id="current-filter-title" class="font-extrabold text-sm sm:text-base text-white flex items-center gap-2">
+                        <i class="fa-solid fa-fire text-awkward-400"></i> Active Lines
+                    </h2>
+                    <span class="text-[11px] text-gray-400 font-mono">Odds: <span class="text-white font-semibold">American (+/-)</span></span>
+                </div>
+
+                <div id="markets-container" class="space-y-4">
+                    <!-- Cards or Empty State -->
+                </div>
+            </section>
+
+            <!-- Right Column: Bet Slip Drawer -->
+            <aside class="lg:col-span-4 space-y-4">
+                <div class="bg-dark-900 border border-dark-700 rounded-2xl p-4 sticky top-20 flex flex-col max-h-[calc(100vh-6rem)]">
+                    
+                    <div class="flex items-center justify-between border-b border-dark-700 pb-3 mb-3">
+                        <div class="flex items-center gap-2">
+                            <i class="fa-solid fa-ticket text-awkward-400"></i>
+                            <h3 class="font-bold text-sm text-white">Bet Slip</h3>
+                            <span id="slip-count-badge" class="bg-awkward-500 text-white font-bold text-xs px-2 py-0.5 rounded-full">0</span>
+                        </div>
+                        <button id="clear-slip-btn" class="text-xs text-gray-400 hover:text-red-400 transition-colors">Clear Slip</button>
+                    </div>
+
+                    <!-- Empty State -->
+                    <div id="slip-empty-state" class="py-12 text-center text-gray-500 space-y-3">
+                        <div class="w-12 h-12 rounded-full bg-dark-800 flex items-center justify-center mx-auto text-gray-400 text-lg">
+                            <i class="fa-solid fa-receipt"></i>
+                        </div>
+                        <p class="text-xs font-medium text-gray-300">Your bet slip is empty.</p>
+                        <p class="text-[11px] text-gray-500 px-6">Click any odds button to add predictions to your slip!</p>
+                    </div>
+
+                    <!-- Active Selections List -->
+                    <div id="slip-items-container" class="flex-1 overflow-y-auto space-y-2.5 pr-1 hidden">
+                        <!-- Items injected here -->
+                    </div>
+
+                    <!-- Stake Input & Returns Summary -->
+                    <div id="slip-summary-panel" class="border-t border-dark-700 pt-3 mt-3 space-y-3 hidden">
+                        
+                        <div id="parlay-banner" class="bg-gradient-to-r from-awkward-600/30 to-dark-800 border border-awkward-500/40 rounded-xl p-2.5 flex items-center justify-between hidden">
+                            <div>
+                                <span class="text-xs font-bold text-awkward-400 block">PARLAY TICKET</span>
+                                <span id="parlay-leg-count" class="text-[10px] text-gray-400">2 Legs Combined</span>
+                            </div>
+                            <div class="text-right">
+                                <span id="parlay-combined-odds" class="text-sm font-mono font-bold text-awkward-400">+100</span>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between text-xs text-gray-400 mb-1">
+                                <span>Wager Stake ($)</span>
+                                <span id="max-stake-btn" class="cursor-pointer text-awkward-400 hover:underline font-semibold">Max Cash</span>
+                            </div>
+                            <div class="relative">
+                                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-mono">$</span>
+                                <input type="number" id="stake-input" min="1" step="5" value="50" class="w-full bg-dark-800 border border-dark-700 rounded-xl py-2 pl-7 pr-3 text-white font-mono text-sm focus:outline-none focus:border-awkward-500 transition-colors">
+                            </div>
+                        </div>
+
+                        <div class="bg-dark-800 rounded-xl p-3 space-y-1.5 font-mono text-xs border border-dark-700">
+                            <div class="flex justify-between text-gray-400">
+                                <span>Est. Net Profit:</span>
+                                <span id="summary-profit" class="text-emeraldAccent-400 font-semibold">$0.00</span>
+                            </div>
+                            <div class="flex justify-between text-white font-bold pt-1 border-t border-dark-700 text-sm">
+                                <span>Total Payout:</span>
+                                <span id="summary-payout" class="text-awkward-400">$0.00</span>
+                            </div>
+                        </div>
+
+                        <button id="place-bet-btn" class="w-full bg-awkward-500 hover:bg-awkward-600 text-white font-extrabold py-3 rounded-xl transition-all shadow-lg shadow-awkward-500/20 active:scale-[0.98] flex items-center justify-center gap-2">
+                            <span>LOCK IN WAGER</span>
+                            <i class="fa-solid fa-lock text-xs"></i>
+                        </button>
+                    </div>
+
+                </div>
+            </aside>
+        </div>
+
+        <!-- VIEW 2: LINE MAKER & SETTLEMENT ENGINE -->
+        <div id="admin-view" class="space-y-6 hidden">
+            
+            <div class="bg-dark-900 border border-dark-700 p-6 rounded-2xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                <div>
+                    <h2 class="text-xl font-extrabold text-white flex items-center gap-2">
+                        <i class="fa-solid fa-sliders text-awkward-400"></i> Akward Line Maker & Settlement Engine
+                    </h2>
+                    <p class="text-xs text-gray-400 mt-1">Publish speaker probabilities, over/under duration lines, or settle completed markets.</p>
+                </div>
+            </div>
+
+            <!-- Admin Sub Tabs -->
+            <div class="flex border-b border-dark-700 gap-6 text-sm font-semibold">
+                <button id="tab-create-market" class="py-3 border-b-2 border-awkward-500 text-awkward-400 flex items-center gap-2">
+                    <i class="fa-solid fa-plus-circle"></i> Publish Custom Line
+                </button>
+                <button id="tab-settle-markets" class="py-3 border-b-2 border-transparent text-gray-400 hover:text-white flex items-center gap-2">
+                    <i class="fa-solid fa-gavel"></i> Settle Markets
+                </button>
+            </div>
+
+            <!-- PUBLISH LINE FORM -->
+            <div id="panel-create-market" class="bg-dark-900 border border-dark-700 p-6 rounded-2xl space-y-6">
+                
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-gray-400 mb-2">Select Line Type</label>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <button type="button" id="type-select-speaker" class="p-3.5 rounded-xl border border-awkward-500 bg-awkward-500/10 text-white font-bold text-xs flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-lg bg-awkward-500 text-white flex items-center justify-center text-sm"><i class="fa-solid fa-users"></i></div>
+                            <div class="text-left">
+                                <div>1. Multi-Choice / Speaker Probabilities</div>
+                                <div class="text-[10px] text-gray-400 font-normal">e.g. Who is most likely to speak? (Ploni_1 -200, Ploni_2 +100, Ploni_3 +600)</div>
+                            </div>
+                        </button>
+                        <button type="button" id="type-select-duration" class="p-3.5 rounded-xl border border-dark-700 bg-dark-800 text-gray-400 font-bold text-xs flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-lg bg-dark-700 text-gray-300 flex items-center justify-center text-sm"><i class="fa-solid fa-stopwatch"></i></div>
+                            <div class="text-left">
+                                <div>2. Timeline / Over/Under Duration</div>
+                                <div class="text-[10px] text-gray-400 font-normal">e.g. Will speaker talk for more or less than 30.0 minutes?</div>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+
+                <form id="create-line-form" class="space-y-6">
+                    <input type="hidden" id="form-market-type" value="SPEAKER">
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="md:col-span-2">
+                            <label class="block text-xs font-semibold uppercase text-gray-400 mb-1">Market Question / Title</label>
+                            <input type="text" id="line-title" placeholder="e.g. Who is most likely to speak this week?" class="w-full bg-dark-800 border border-dark-700 rounded-xl p-3 text-xs text-white focus:border-awkward-500 focus:outline-none" required>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold uppercase text-gray-400 mb-1">Timeframe / Session</label>
+                            <input type="text" id="line-time" placeholder="e.g. Thursday Meeting" class="w-full bg-dark-800 border border-dark-700 rounded-xl p-3 text-xs text-white focus:border-awkward-500 focus:outline-none" required>
+                        </div>
+                    </div>
+
+                    <!-- CONTAINER FOR MULTI-CHOICE SPEAKER OPTIONS -->
+                    <div id="container-speaker-options" class="space-y-4">
+                        <div class="flex items-center justify-between">
+                            <label class="block text-xs font-semibold uppercase text-gray-400">Speaker Candidates & American Odds</label>
+                            <button type="button" id="add-speaker-option-btn" class="text-xs text-awkward-400 hover:underline font-bold flex items-center gap-1">
+                                <i class="fa-solid fa-plus"></i> Add Candidate
+                            </button>
+                        </div>
+
+                        <div id="speaker-inputs-list" class="space-y-2.5">
+                            <!-- Speaker rows rendered here -->
+                        </div>
+                    </div>
+
+                    <!-- CONTAINER FOR OVER/UNDER DURATION -->
+                    <div id="container-duration-options" class="grid grid-cols-1 md:grid-cols-3 gap-4 hidden">
+                        <div>
+                            <label class="block text-xs font-semibold uppercase text-gray-400 mb-1">Target Line (Minutes)</label>
+                            <input type="number" step="0.5" id="duration-target-mins" placeholder="30.0" value="30.0" class="w-full bg-dark-800 border border-dark-700 rounded-xl p-2.5 text-xs text-white font-mono focus:border-awkward-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold uppercase text-gray-400 mb-1">Over Odds (e.g. -110)</label>
+                            <input type="number" id="duration-over-odds" value="-110" class="w-full bg-dark-800 border border-dark-700 rounded-xl p-2.5 text-xs text-white font-mono focus:border-awkward-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold uppercase text-gray-400 mb-1">Under Odds (e.g. -110)</label>
+                            <input type="number" id="duration-under-odds" value="-110" class="w-full bg-dark-800 border border-dark-700 rounded-xl p-2.5 text-xs text-white font-mono focus:border-awkward-500 focus:outline-none">
+                        </div>
+                    </div>
+
+                    <button type="submit" class="w-full bg-awkward-500 hover:bg-awkward-600 text-white font-extrabold py-3.5 rounded-xl transition-all shadow-lg shadow-awkward-500/20 flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-paper-plane text-xs"></i>
+                        <span>PUBLISH LINE TO BOARD</span>
+                    </button>
+                </form>
+            </div>
+
+            <!-- SETTLEMENT PANEL -->
+            <div id="panel-settle-markets" class="bg-dark-900 border border-dark-700 p-6 rounded-2xl space-y-4 hidden">
+                <p class="text-xs text-gray-400">Select winning candidates or input actual meeting duration (minutes) to grade tickets and process payouts.</p>
+                <div id="admin-settle-list" class="space-y-4">
+                    <!-- Dynamic settlement cards -->
+                </div>
+            </div>
+
+        </div>
+
+        <!-- VIEW 3: LEADERBOARD & USER DIRECTORY -->
+        <div id="leaderboard-view" class="space-y-6 hidden">
+            <div class="bg-dark-900 border border-dark-700 p-6 rounded-2xl flex items-center justify-between">
+                <div>
+                    <h2 class="text-lg font-extrabold text-white flex items-center gap-2 mb-1">
+                        <i class="fa-solid fa-trophy text-amber-400"></i> User Directory & Standings
+                    </h2>
+                    <p class="text-xs text-gray-400">Track user bankrolls, active bets, and performance across registered accounts.</p>
+                </div>
+                <button id="reset-app-btn" class="text-xs bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 px-3 py-1.5 rounded-xl font-bold transition-all">
+                    Reset All App Data
+                </button>
+            </div>
+
+            <div id="users-leaderboard-table" class="bg-dark-900 border border-dark-700 rounded-2xl overflow-hidden">
+                <!-- Leaderboard rows rendered here -->
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="fixed bottom-6 right-6 bg-awkward-500 text-white font-bold px-4 py-3 rounded-xl shadow-2xl transition-all transform translate-y-20 opacity-0 z-50 flex items-center gap-2">
+        <i class="fa-solid fa-circle-check text-lg"></i>
+        <span id="toast-message">Action executed!</span>
+    </div>
+
+    <script>
+        /* State Initialization */
+        let marketsState = JSON.parse(localStorage.getItem('akward_markets_v4')) || [];
+        let usersState = JSON.parse(localStorage.getItem('akward_users_v4')) || {};
+        let currentUserId = localStorage.getItem('akward_current_user_v4') || null;
+
+        let betSlipSelections = [];
+        let currentFilter = 'ALL';
+
+        function persistState() {
+            localStorage.setItem('akward_markets_v4', JSON.stringify(marketsState));
+            localStorage.setItem('akward_users_v4', JSON.stringify(usersState));
+            if (currentUserId) {
+                localStorage.setItem('akward_current_user_v4', currentUserId);
+            } else {
+                localStorage.removeItem('akward_current_user_v4');
+            }
+        }
+
+        /* User Authentication & Switching */
+        function checkAuthStatus() {
+            const authModal = document.getElementById('auth-modal');
+            if (!currentUserId || !usersState[currentUserId]) {
+                authModal.classList.remove('hidden');
+            } else {
+                authModal.classList.add('hidden');
+                updateUserHeader();
+            }
+        }
+
+        function updateUserHeader() {
+            if (!currentUserId || !usersState[currentUserId]) return;
+
+            const user = usersState[currentUserId];
+            document.getElementById('user-name-display').innerText = user.name;
+            document.getElementById('user-balance-display').innerText = `$${user.balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        }
+
+        function switchUser(userName) {
+            const trimmed = userName.trim();
+            if (!trimmed) return;
+
+            const uid = 'usr_' + trimmed.toLowerCase().replace(/[^a-z0-9]/g, '');
+            if (!usersState[uid]) {
+                usersState[uid] = {
+                    id: uid,
+                    name: trimmed,
+                    balance: 1000.00,
+                    wagers: []
+                };
+            }
+            currentUserId = uid;
+            persistState();
+            checkAuthStatus();
+            renderUserWagersHistory();
+            renderLeaderboard();
+            showToast(`Signed in as ${trimmed}`);
+        }
+
+        /* Odds Math Engine */
+        function americanToDecimal(american) {
+            const odds = parseFloat(american);
+            if (odds > 0) {
+                return (odds / 100) + 1;
+            } else {
+                return (100 / Math.abs(odds)) + 1;
+            }
+        }
+
+        function formatAmerican(odds) {
+            const num = parseInt(odds);
+            return num > 0 ? `+${num}` : `${num}`;
+        }
+
+        function calculateParlayMultiplier(selections) {
+            if (selections.length === 0) return 1.0;
+            return selections.reduce((accum, sel) => accum * americanToDecimal(sel.odds), 1.0);
+        }
+
+        function decimalToAmerican(decimal) {
+            if (decimal >= 2.0) {
+                return `+${Math.round((decimal - 1) * 100)}`;
+            } else {
+                return `${Math.round(-100 / (decimal - 1))}`;
+            }
+        }
+
+        /* Render Categories Filter Navigation */
+        function renderFilterNav() {
+            const nav = document.getElementById('filter-nav');
+            const counts = { 'ALL': 0, 'SPEAKER': 0, 'DURATION': 0 };
+
+            marketsState.forEach(m => {
+                if (m.status === 'OPEN') {
+                    counts['ALL']++;
+                    if (counts[m.type] !== undefined) counts[m.type]++;
+                }
+            });
+
+            document.getElementById('active-markets-count').innerText = `${counts['ALL']} Open`;
+            nav.innerHTML = '';
+
+            const filterLabels = [
+                { key: 'ALL', label: 'All Predictions', icon: 'fa-layer-group' },
+                { key: 'SPEAKER', label: 'Speaker Probabilities', icon: 'fa-users' },
+                { key: 'DURATION', label: 'Timeline / Over-Under', icon: 'fa-stopwatch' }
+            ];
+
+            filterLabels.forEach(f => {
+                const btn = document.createElement('button');
+                const isActive = currentFilter === f.key;
+                btn.className = `w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                    isActive ? 'bg-dark-800 text-awkward-400 border border-awkward-500/30' : 'text-gray-400 hover:bg-dark-800 hover:text-white'
+                }`;
+                btn.innerHTML = `
+                    <span class="flex items-center gap-2">
+                        <i class="fa-solid ${f.icon} text-awkward-400"></i>
+                        ${f.label}
+                    </span>
+                    <span class="font-mono text-[10px] bg-dark-950 px-2 py-0.5 rounded-md text-gray-400">${counts[f.key] || 0}</span>
+                `;
+                btn.addEventListener('click', () => {
+                    currentFilter = f.key;
+                    document.getElementById('current-filter-title').innerHTML = `
+                        <i class="fa-solid ${f.icon} text-awkward-400"></i> ${f.label}
+                    `;
+                    renderFilterNav();
+                    renderMarkets();
+                });
+                nav.appendChild(btn);
+            });
+        }
+
+        /* Render Markets Feed */
+        function renderMarkets() {
+            const container = document.getElementById('markets-container');
+            container.innerHTML = '';
+
+            const filtered = marketsState.filter(m => {
+                if (m.status !== 'OPEN') return false;
+                if (currentFilter === 'ALL') return true;
+                return m.type === currentFilter;
+            });
+
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="bg-dark-900 border border-dark-700 rounded-2xl p-8 text-center text-gray-500 space-y-4">
+                        <div class="w-14 h-14 bg-dark-800 rounded-full flex items-center justify-center mx-auto text-gray-500 text-2xl">
+                            <i class="fa-solid fa-folder-open"></i>
+                        </div>
+                        <div class="space-y-1">
+                            <p class="text-sm font-bold text-gray-300">No active lines listed yet.</p>
+                            <p class="text-xs text-gray-500 max-w-sm mx-auto">Create your first prediction line using the Line Maker tab above!</p>
+                        </div>
+                        <button id="go-to-line-maker-btn" class="bg-awkward-500 hover:bg-awkward-600 text-white font-bold text-xs px-4 py-2.5 rounded-xl transition-all">
+                            <i class="fa-solid fa-plus-circle mr-1"></i> Open Line Maker
+                        </button>
+                    </div>
+                `;
+
+                const gotoBtn = document.getElementById('go-to-line-maker-btn');
+                if (gotoBtn) {
+                    gotoBtn.addEventListener('click', () => {
+                        document.getElementById('nav-create-btn').click();
+                    });
+                }
+                return;
+            }
+
+            filtered.forEach(market => {
+                const card = document.createElement('div');
+                card.className = "bg-dark-900 border border-dark-700 hover:border-dark-600 rounded-2xl p-4 space-y-3 transition-all";
+                
+                if (market.type === 'SPEAKER') {
+                    card.innerHTML = `
+                        <div class="flex items-center justify-between text-xs text-gray-400 border-b border-dark-700 pb-2">
+                            <span class="font-bold text-awkward-400 font-mono"><i class="fa-solid fa-users mr-1"></i> ${market.category}</span>
+                            <span>${market.time}</span>
+                        </div>
+
+                        <h3 class="font-extrabold text-sm sm:text-base text-white leading-snug">${market.title}</h3>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1">
+                            ${market.options.map(opt => {
+                                const selected = isBetSelected(market.id, opt.name);
+                                return `
+                                    <button data-market-id="${market.id}" data-type="SPEAKER" data-selection="${opt.name}" data-odds="${opt.odds}"
+                                        class="odds-btn ${selected ? 'selected' : ''} bg-dark-800 border border-dark-700 hover:border-awkward-500 p-3 rounded-xl flex flex-col items-center justify-center gap-1">
+                                        <span class="text-xs font-bold text-gray-200">${opt.name}</span>
+                                        <span class="font-mono text-xs font-bold text-awkward-400">${formatAmerican(opt.odds)}</span>
+                                    </button>
+                                `;
+                            }).join('')}
+                        </div>
+                    `;
+                } else if (market.type === 'DURATION') {
+                    const overSelection = `Over ${market.targetMins} mins`;
+                    const underSelection = `Under ${market.targetMins} mins`;
+
+                    const selectedOver = isBetSelected(market.id, overSelection);
+                    const selectedUnder = isBetSelected(market.id, underSelection);
+
+                    card.innerHTML = `
+                        <div class="flex items-center justify-between text-xs text-gray-400 border-b border-dark-700 pb-2">
+                            <span class="font-bold text-awkward-400 font-mono"><i class="fa-solid fa-stopwatch mr-1"></i> ${market.category}</span>
+                            <span>${market.time}</span>
+                        </div>
+
+                        <h3 class="font-extrabold text-sm sm:text-base text-white leading-snug">${market.title}</h3>
+
+                        <div class="grid grid-cols-2 gap-3 pt-1">
+                            <button data-market-id="${market.id}" data-type="DURATION" data-selection="${overSelection}" data-odds="${market.overOdds}"
+                                class="odds-btn ${selectedOver ? 'selected' : ''} bg-dark-800 border border-dark-700 hover:border-awkward-500 p-3 rounded-xl flex flex-col items-center justify-center gap-1">
+                                <span class="text-xs font-bold text-gray-200">OVER ${market.targetMins} MINS</span>
+                                <span class="font-mono text-xs font-bold text-awkward-400">${formatAmerican(market.overOdds)}</span>
+                            </button>
+                            <button data-market-id="${market.id}" data-type="DURATION" data-selection="${underSelection}" data-odds="${market.underOdds}"
+                                class="odds-btn ${selectedUnder ? 'selected' : ''} bg-dark-800 border border-dark-700 hover:border-awkward-500 p-3 rounded-xl flex flex-col items-center justify-center gap-1">
+                                <span class="text-xs font-bold text-gray-200">UNDER ${market.targetMins} MINS</span>
+                                <span class="font-mono text-xs font-bold text-awkward-400">${formatAmerican(market.underOdds)}</span>
+                            </button>
+                        </div>
+                    `;
+                }
+
+                container.appendChild(card);
+            });
+
+            document.querySelectorAll('.odds-btn').forEach(btn => {
+                btn.addEventListener('click', handleOddsSelection);
+            });
+        }
+
+        function isBetSelected(marketId, selectionName) {
+            return betSlipSelections.some(s => s.marketId === marketId && s.selection === selectionName);
+        }
+
+        function handleOddsSelection(e) {
+            if (!currentUserId) {
+                checkAuthStatus();
+                return;
+            }
+
+            const btn = e.currentTarget;
+            const marketId = btn.getAttribute('data-market-id');
+            const type = btn.getAttribute('data-type');
+            const selection = btn.getAttribute('data-selection');
+            const odds = parseInt(btn.getAttribute('data-odds'));
+
+            const market = marketsState.find(m => m.id === marketId);
+            if (!market) return;
+
+            const existingIdx = betSlipSelections.findIndex(s => s.marketId === marketId && s.selection === selection);
+
+            if (existingIdx > -1) {
+                betSlipSelections.splice(existingIdx, 1);
+            } else {
+                betSlipSelections = betSlipSelections.filter(s => s.marketId !== marketId);
+                betSlipSelections.push({
+                    marketId,
+                    type,
+                    selection,
+                    odds,
+                    marketTitle: market.title,
+                    targetMins: market.targetMins || null
+                });
+            }
+
+            renderBetSlip();
+            renderMarkets();
+        }
+
+        function renderBetSlip() {
+            const countBadge = document.getElementById('slip-count-badge');
+            const emptyState = document.getElementById('slip-empty-state');
+            const itemsContainer = document.getElementById('slip-items-container');
+            const summaryPanel = document.getElementById('slip-summary-panel');
+            const parlayBanner = document.getElementById('parlay-banner');
+
+            countBadge.innerText = betSlipSelections.length;
+
+            if (betSlipSelections.length === 0) {
+                emptyState.classList.remove('hidden');
+                itemsContainer.classList.add('hidden');
+                summaryPanel.classList.add('hidden');
+                return;
+            }
+
+            emptyState.classList.add('hidden');
+            itemsContainer.classList.remove('hidden');
+            summaryPanel.classList.remove('hidden');
+
+            itemsContainer.innerHTML = '';
+
+            betSlipSelections.forEach((sel, index) => {
+                const item = document.createElement('div');
+                item.className = "bg-dark-800 border border-dark-700 rounded-xl p-3 relative space-y-1";
+                item.innerHTML = `
+                    <button class="remove-leg-btn absolute top-2 right-2 text-gray-500 hover:text-red-400 text-xs" data-index="${index}">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                    <div class="text-[10px] text-gray-400 font-semibold uppercase">${sel.type} • ${sel.marketTitle}</div>
+                    <div class="flex items-center justify-between font-bold text-sm">
+                        <span class="text-white">${sel.selection}</span>
+                        <span class="font-mono text-awkward-400">${formatAmerican(sel.odds)}</span>
+                    </div>
+                `;
+                itemsContainer.appendChild(item);
+            });
+
+            document.querySelectorAll('.remove-leg-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const idx = parseInt(e.currentTarget.getAttribute('data-index'));
+                    betSlipSelections.splice(idx, 1);
+                    renderBetSlip();
+                    renderMarkets();
+                });
+            });
+
+            const stakeInput = document.getElementById('stake-input');
+            let stake = parseFloat(stakeInput.value) || 0;
+
+            if (betSlipSelections.length > 1) {
+                parlayBanner.classList.remove('hidden');
+                document.getElementById('parlay-leg-count').innerText = `${betSlipSelections.length} Combined Legs`;
+                const multiplier = calculateParlayMultiplier(betSlipSelections);
+                document.getElementById('parlay-combined-odds').innerText = decimalToAmerican(multiplier);
+
+                const profit = stake * (multiplier - 1);
+                const payout = stake * multiplier;
+
+                document.getElementById('summary-profit').innerText = `$${profit.toFixed(2)}`;
+                document.getElementById('summary-payout').innerText = `$${payout.toFixed(2)}`;
+            } else {
+                parlayBanner.classList.add('hidden');
+                const decimal = americanToDecimal(betSlipSelections[0].odds);
+                const profit = stake * (decimal - 1);
+                const payout = stake * decimal;
+
+                document.getElementById('summary-profit').innerText = `$${profit.toFixed(2)}`;
+                document.getElementById('summary-payout').innerText = `$${payout.toFixed(2)}`;
+            }
+        }
+
+        function handlePlaceBet() {
+            if (!currentUserId || !usersState[currentUserId]) {
+                checkAuthStatus();
+                return;
+            }
+
+            const currentUser = usersState[currentUserId];
+            const stakeInput = document.getElementById('stake-input');
+            const stake = parseFloat(stakeInput.value) || 0;
+
+            if (stake <= 0) {
+                showToast("Enter a valid stake amount.", "red");
+                return;
+            }
+
+            if (stake > currentUser.balance) {
+                showToast("Insufficient bankroll cash!", "red");
+                return;
+            }
+
+            let multiplier = betSlipSelections.length > 1 
+                ? calculateParlayMultiplier(betSlipSelections) 
+                : americanToDecimal(betSlipSelections[0].odds);
+
+            const potentialPayout = stake * multiplier;
+
+            currentUser.balance -= stake;
+
+            const ticket = {
+                id: 'TKT-' + Math.random().toString(36).substr(2, 6).toUpperCase(),
+                date: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                stake: stake,
+                potentialPayout: potentialPayout,
+                type: betSlipSelections.length > 1 ? 'PARLAY' : 'SINGLE',
+                selections: [...betSlipSelections],
+                status: 'PENDING',
+                placedBy: currentUser.name
+            };
+
+            currentUser.wagers.unshift(ticket);
+            betSlipSelections = [];
+
+            persistState();
+            updateUserHeader();
+            renderBetSlip();
+            renderMarkets();
+            renderUserWagersHistory();
+            renderLeaderboard();
+
+            showToast("Wager successfully placed!");
+        }
+
+        function renderUserWagersHistory() {
+            const container = document.getElementById('user-wagers-list');
+            const pendingBadge = document.getElementById('user-pending-count');
+
+            if (!currentUserId || !usersState[currentUserId]) {
+                container.innerHTML = `<div class="text-center py-4 text-gray-500 italic">Sign in to view tickets.</div>`;
+                return;
+            }
+
+            const currentUser = usersState[currentUserId];
+            const pending = currentUser.wagers.filter(w => w.status === 'PENDING');
+            pendingBadge.innerText = `${pending.length} Pending`;
+
+            if (currentUser.wagers.length === 0) {
+                container.innerHTML = `<div class="text-center py-4 text-gray-500 italic">No wagers placed yet.</div>`;
+                return;
+            }
+
+            container.innerHTML = '';
+            currentUser.wagers.slice(0, 8).forEach(ticket => {
+                const statusColor = ticket.status === 'WON' ? 'text-emeraldAccent-400 bg-emerald-950/60 border-emerald-800/40' :
+                                    ticket.status === 'LOST' ? 'text-red-400 bg-red-950/60 border-red-800/40' :
+                                    ticket.status === 'PUSH' ? 'text-blue-400 bg-blue-950/60 border-blue-800/40' :
+                                    'text-amber-400 bg-amber-950/60 border-amber-800/40';
+
+                const div = document.createElement('div');
+                div.className = "bg-dark-800 border border-dark-700 rounded-xl p-2.5 space-y-1.5";
+                div.innerHTML = `
+                    <div class="flex items-center justify-between font-mono">
+                        <span class="font-bold text-white">${ticket.type} ($${ticket.stake.toFixed(2)})</span>
+                        <span class="text-[10px] px-2 py-0.5 rounded-full font-bold border ${statusColor}">${ticket.status}</span>
+                    </div>
+                    <div class="text-[11px] text-gray-300">
+                        ${ticket.selections.map(s => `<div>• ${s.selection} (${formatAmerican(s.odds)})</div>`).join('')}
+                    </div>
+                    <div class="flex justify-between items-center text-[10px] text-gray-500 pt-1 border-t border-dark-700 font-mono">
+                        <span>Payout: $${ticket.potentialPayout.toFixed(2)}</span>
+                        <span>${ticket.date}</span>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        /* Line Maker & Settlement Engine Setup */
+        function setupAdminEngine() {
+            const typeSpeakerBtn = document.getElementById('type-select-speaker');
+            const typeDurationBtn = document.getElementById('type-select-duration');
+            const formTypeInput = document.getElementById('form-market-type');
+
+            const containerSpeaker = document.getElementById('container-speaker-options');
+            const containerDuration = document.getElementById('container-duration-options');
+
+            typeSpeakerBtn.addEventListener('click', () => {
+                formTypeInput.value = 'SPEAKER';
+                typeSpeakerBtn.className = "p-3.5 rounded-xl border border-awkward-500 bg-awkward-500/10 text-white font-bold text-xs flex items-center gap-3";
+                typeDurationBtn.className = "p-3.5 rounded-xl border border-dark-700 bg-dark-800 text-gray-400 font-bold text-xs flex items-center gap-3";
+                containerSpeaker.classList.remove('hidden');
+                containerDuration.classList.add('hidden');
+            });
+
+            typeDurationBtn.addEventListener('click', () => {
+                formTypeInput.value = 'DURATION';
+                typeDurationBtn.className = "p-3.5 rounded-xl border border-awkward-500 bg-awkward-500/10 text-white font-bold text-xs flex items-center gap-3";
+                typeSpeakerBtn.className = "p-3.5 rounded-xl border border-dark-700 bg-dark-800 text-gray-400 font-bold text-xs flex items-center gap-3";
+                containerDuration.classList.remove('hidden');
+                containerSpeaker.classList.add('hidden');
+            });
+
+            const list = document.getElementById('speaker-inputs-list');
+            list.innerHTML = '';
+            addSpeakerInputRow('Humphrey', -200);
+            addSpeakerInputRow('Leonardo', 100);
+            addSpeakerInputRow('Jacob', 600);
+
+            document.getElementById('add-speaker-option-btn').addEventListener('click', () => {
+                addSpeakerInputRow('', 100);
+            });
+
+            document.getElementById('create-line-form').addEventListener('submit', (e) => {
+                e.preventDefault();
+
+                const mType = formTypeInput.value;
+                const title = document.getElementById('line-title').value.trim();
+                const time = document.getElementById('line-time').value.trim();
+                const creatorName = currentUserId && usersState[currentUserId] ? usersState[currentUserId].name : 'Admin';
+
+                if (mType === 'SPEAKER') {
+                    const optionRows = document.querySelectorAll('.speaker-input-row');
+                    const options = [];
+                    optionRows.forEach(row => {
+                        const name = row.querySelector('.speaker-name-input').value.trim();
+                        const odds = parseInt(row.querySelector('.speaker-odds-input').value) || 100;
+                        if (name) {
+                            options.push({ id: 'opt-' + Math.random().toString(36).substr(2, 5), name, odds });
+                        }
+                    });
+
+                    if (options.length < 2) {
+                        showToast("Provide at least 2 candidate options.", "red");
+                        return;
+                    }
+
+                    const newMarket = {
+                        id: 'mkt-' + Date.now(),
+                        type: 'SPEAKER',
+                        category: 'Speaker Probability',
+                        title,
+                        time,
+                        creator: creatorName,
+                        status: 'OPEN',
+                        options
+                    };
+
+                    marketsState.unshift(newMarket);
+                } else {
+                    const targetMins = parseFloat(document.getElementById('duration-target-mins').value);
+                    const overOdds = parseInt(document.getElementById('duration-over-odds').value);
+                    const underOdds = parseInt(document.getElementById('duration-under-odds').value);
+
+                    if (isNaN(targetMins) || targetMins <= 0) {
+                        showToast("Provide a valid duration in minutes.", "red");
+                        return;
+                    }
+
+                    const newMarket = {
+                        id: 'mkt-' + Date.now(),
+                        type: 'DURATION',
+                        category: 'Timeline Duration',
+                        title,
+                        targetMins,
+                        overOdds: overOdds || -110,
+                        underOdds: underOdds || -110,
+                        time,
+                        creator: creatorName,
+                        status: 'OPEN'
+                    };
+
+                    marketsState.unshift(newMarket);
+                }
+
+                persistState();
+                renderFilterNav();
+                renderMarkets();
+                renderAdminSettleList();
+
+                document.getElementById('line-title').value = '';
+                document.getElementById('line-time').value = '';
+
+                showToast("New market published successfully!");
+                document.getElementById('nav-markets-btn').click();
+            });
+        }
+
+        function addSpeakerInputRow(nameVal = '', oddsVal = 100) {
+            const list = document.getElementById('speaker-inputs-list');
+            const div = document.createElement('div');
+            div.className = "speaker-input-row grid grid-cols-1 sm:grid-cols-3 gap-2 items-center bg-dark-800 p-2.5 rounded-xl border border-dark-700";
+            div.innerHTML = `
+                <div class="sm:col-span-2">
+                    <input type="text" value="${nameVal}" placeholder="Candidate Name (e.g. Elisha)" class="speaker-name-input w-full bg-dark-900 border border-dark-700 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-awkward-500" required>
+                </div>
+                <div class="flex items-center gap-2">
+                    <input type="number" value="${oddsVal}" placeholder="Odds (-200)" class="speaker-odds-input w-full bg-dark-900 border border-dark-700 rounded-lg p-2 text-xs text-white font-mono focus:outline-none focus:border-awkward-500" required>
+                    <button type="button" class="remove-row-btn text-gray-500 hover:text-red-400 text-xs px-1.5"><i class="fa-solid fa-trash"></i></button>
+                </div>
+            `;
+            list.appendChild(div);
+
+            div.querySelector('.remove-row-btn').addEventListener('click', () => {
+                div.remove();
+            });
+        }
+
+        function renderAdminSettleList() {
+            const container = document.getElementById('admin-settle-list');
+            container.innerHTML = '';
+
+            const openMarkets = marketsState.filter(m => m.status === 'OPEN');
+
+            if (openMarkets.length === 0) {
+                container.innerHTML = `<div class="text-center text-gray-500 py-6">No open markets pending settlement.</div>`;
+                return;
+            }
+
+            openMarkets.forEach(market => {
+                const card = document.createElement('div');
+                card.className = "bg-dark-800 border border-dark-700 rounded-xl p-4 space-y-3 text-xs";
+
+                if (market.type === 'SPEAKER') {
+                    card.innerHTML = `
+                        <div class="flex justify-between items-center font-bold text-white">
+                            <span>${market.title}</span>
+                            <span class="text-awkward-400 font-mono text-[10px]">${market.category}</span>
+                        </div>
+                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                            ${market.options.map(opt => `
+                                <button data-market-id="${market.id}" data-winner="${opt.name}" class="settle-speaker-btn bg-dark-900 hover:bg-awkward-600 border border-dark-700 text-white font-bold p-2.5 rounded-xl transition-all">
+                                    Declare Winner: ${opt.name}
+                                </button>
+                            `).join('')}
+                        </div>
+                    `;
+                } else {
+                    card.innerHTML = `
+                        <div class="flex justify-between items-center font-bold text-white">
+                            <span>${market.title} (Target Line: ${market.targetMins} Mins)</span>
+                            <span class="text-awkward-400 font-mono text-[10px]">${market.category}</span>
+                        </div>
+                        <div class="flex flex-col sm:flex-row items-center gap-3">
+                            <div class="w-full sm:w-1/2">
+                                <label class="text-[10px] text-gray-400 uppercase block mb-1">Enter Recorded Duration (Minutes)</label>
+                                <input type="number" step="0.1" placeholder="e.g. 34.5" class="actual-duration-input w-full bg-dark-900 border border-dark-700 rounded-xl p-2.5 text-xs text-white font-mono focus:border-awkward-500 focus:outline-none">
+                            </div>
+                            <button data-market-id="${market.id}" data-target="${market.targetMins}" class="settle-duration-btn w-full sm:w-1/2 bg-awkward-500 hover:bg-awkward-600 text-white font-bold p-2.5 rounded-xl transition-all self-end">
+                                Grade & Settle Duration
+                            </button>
+                        </div>
+                    `;
+                }
+
+                container.appendChild(card);
+            });
+
+            document.querySelectorAll('.settle-speaker-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const mId = e.currentTarget.getAttribute('data-market-id');
+                    const winner = e.currentTarget.getAttribute('data-winner');
+                    settleMarket(mId, winner);
+                });
+            });
+
+            document.querySelectorAll('.settle-duration-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const card = e.currentTarget.closest('.bg-dark-800');
+                    const mId = e.currentTarget.getAttribute('data-market-id');
+                    const target = parseFloat(e.currentTarget.getAttribute('data-target'));
+                    const actual = parseFloat(card.querySelector('.actual-duration-input').value);
+
+                    if (isNaN(actual)) {
+                        showToast("Enter a valid duration number.", "red");
+                        return;
+                    }
+
+                    let winnerText = '';
+                    if (actual > target) {
+                        winnerText = `Over ${target} mins`;
+                    } else if (actual < target) {
+                        winnerText = `Under ${target} mins`;
+                    } else {
+                        winnerText = `PUSH`;
+                    }
+
+                    settleMarket(mId, winnerText, actual);
+                });
+            });
+        }
+
+        /* Settlement Ticket Evaluator */
+        function settleMarket(marketId, winningText, actualResult = null) {
+            const market = marketsState.find(m => m.id === marketId);
+            if (!market) return;
+
+            market.status = 'SETTLED';
+            market.winningText = winningText;
+            if (actualResult !== null) market.actualResult = actualResult;
+
+            Object.keys(usersState).forEach(uid => {
+                const user = usersState[uid];
+                user.wagers.forEach(ticket => {
+                    if (ticket.status !== 'PENDING') return;
+
+                    let ticketEvaluated = true;
+                    let hasLegInThisMarket = false;
+                    let legResult = 'WON';
+
+                    ticket.selections.forEach(sel => {
+                        if (sel.marketId !== marketId) return;
+                        hasLegInThisMarket = true;
+
+                        if (winningText === 'PUSH') {
+                            legResult = 'PUSH';
+                        } else if (sel.selection !== winningText) {
+                            legResult = 'LOST';
+                        }
+                    });
+
+                    if (hasLegInThisMarket) {
+                        if (legResult === 'LOST') {
+                            ticket.status = 'LOST';
+                        } else if (legResult === 'PUSH') {
+                            ticket.status = 'PUSH';
+                            user.balance += ticket.stake; // refund stake
+                        } else if (legResult === 'WON') {
+                            const allWon = ticket.selections.every(s => {
+                                const targetMkt = marketsState.find(m => m.id === s.marketId);
+                                return targetMkt && targetMkt.status === 'SETTLED' && targetMkt.winningText === s.selection;
+                            });
+
+                            if (allWon) {
+                                ticket.status = 'WON';
+                                user.balance += ticket.potentialPayout;
+                            }
+                        }
+                    }
+                });
+            });
+
+            persistState();
+            updateUserHeader();
+            renderAdminSettleList();
+            renderUserWagersHistory();
+            renderLeaderboard();
+            showToast(`Market settled! Winning outcome: ${winningText}`);
+        }
+
+        /* Leaderboard Renderer */
+        function renderLeaderboard() {
+            const table = document.getElementById('users-leaderboard-table');
+            const sortedUsers = Object.values(usersState).sort((a, b) => b.balance - a.balance);
+
+            if (sortedUsers.length === 0) {
+                table.innerHTML = `
+                    <div class="p-8 text-center text-gray-500 text-xs">
+                        No registered users yet. Type a username above to join!
+                    </div>
+                `;
+                return;
+            }
+
+            table.innerHTML = `
+                <div class="grid grid-cols-12 bg-dark-800 px-4 py-3 text-[11px] font-bold uppercase text-gray-400 border-b border-dark-700">
+                    <div class="col-span-5 sm:col-span-4">User Name</div>
+                    <div class="col-span-3 sm:col-span-3 font-mono">Bankroll</div>
+                    <div class="col-span-2 sm:col-span-3 font-mono">Total Bets</div>
+                    <div class="col-span-2 sm:col-span-2 text-right">Action</div>
+                </div>
+            `;
+
+            sortedUsers.forEach((u, i) => {
+                const isCurrent = u.id === currentUserId;
+                const row = document.createElement('div');
+                row.className = `grid grid-cols-12 px-4 py-3 text-xs items-center border-b border-dark-700/60 ${isCurrent ? 'bg-awkward-500/10' : ''}`;
+                row.innerHTML = `
+                    <div class="col-span-5 sm:col-span-4 flex items-center gap-2 font-bold text-white">
+                        <span class="font-mono text-gray-500 text-[10px]">#${i + 1}</span>
+                        <span>${u.name}</span>
+                        ${isCurrent ? '<span class="text-[9px] bg-awkward-500 text-white px-1.5 py-0.5 rounded font-mono">YOU</span>' : ''}
+                    </div>
+                    <div class="col-span-3 sm:col-span-3 font-mono font-bold text-emeraldAccent-400">$${u.balance.toLocaleString('en-US', { minimumFractionDigits: 2 })}</div>
+                    <div class="col-span-2 sm:col-span-3 font-mono text-gray-300">${u.wagers.length} Tickets</div>
+                    <div class="col-span-2 sm:col-span-2 text-right">
+                        <button data-username="${u.name}" class="switch-to-user-btn text-[10px] text-awkward-400 hover:underline font-bold">Switch Profile</button>
+                    </div>
+                `;
+                table.appendChild(row);
+            });
+
+            document.querySelectorAll('.switch-to-user-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const name = e.target.getAttribute('data-username');
+                    switchUser(name);
+                });
+            });
+        }
+
+        /* Views Navigation Controller */
+        function setupNavigation() {
+            const marketsView = document.getElementById('markets-view');
+            const adminView = document.getElementById('admin-view');
+            const leaderboardView = document.getElementById('leaderboard-view');
+
+            const btnMarkets = document.getElementById('nav-markets-btn');
+            const btnCreate = document.getElementById('nav-create-btn');
+            const btnLeaderboard = document.getElementById('nav-leaderboard-btn');
+
+            btnMarkets.addEventListener('click', () => {
+                marketsView.classList.remove('hidden');
+                adminView.classList.add('hidden');
+                leaderboardView.classList.add('hidden');
+
+                btnMarkets.className = "px-3 py-1.5 rounded-lg text-xs font-bold transition-all bg-awkward-500 text-white shadow-md";
+                btnCreate.className = "px-3 py-1.5 rounded-lg text-xs font-bold transition-all text-gray-400 hover:text-white";
+                btnLeaderboard.className = "px-3 py-1.5 rounded-lg text-xs font-bold transition-all text-gray-400 hover:text-white";
+            });
+
+            btnCreate.addEventListener('click', () => {
+                adminView.classList.remove('hidden');
+                marketsView.classList.add('hidden');
+                leaderboardView.classList.add('hidden');
+
+                btnCreate.className = "px-3 py-1.5 rounded-lg text-xs font-bold transition-all bg-awkward-500 text-white shadow-md";
+                btnMarkets.className = "px-3 py-1.5 rounded-lg text-xs font-bold transition-all text-gray-400 hover:text-white";
+                btnLeaderboard.className = "px-3 py-1.5 rounded-lg text-xs font-bold transition-all text-gray-400 hover:text-white";
+                renderAdminSettleList();
+            });
+
+            btnLeaderboard.addEventListener('click', () => {
+                leaderboardView.classList.remove('hidden');
+                marketsView.classList.add('hidden');
+                adminView.classList.add('hidden');
+
+                btnLeaderboard.className = "px-3 py-1.5 rounded-lg text-xs font-bold transition-all bg-awkward-500 text-white shadow-md";
+                btnMarkets.className = "px-3 py-1.5 rounded-lg text-xs font-bold transition-all text-gray-400 hover:text-white";
+                btnCreate.className = "px-3 py-1.5 rounded-lg text-xs font-bold transition-all text-gray-400 hover:text-white";
+                renderLeaderboard();
+            });
+
+            const tabCreate = document.getElementById('tab-create-market');
+            const tabSettle = document.getElementById('tab-settle-markets');
+            const panelCreate = document.getElementById('panel-create-market');
+            const panelSettle = document.getElementById('panel-settle-markets');
+
+            tabCreate.addEventListener('click', () => {
+                tabCreate.className = "py-3 border-b-2 border-awkward-500 text-awkward-400 flex items-center gap-2";
+                tabSettle.className = "py-3 border-b-2 border-transparent text-gray-400 hover:text-white flex items-center gap-2";
+                panelCreate.classList.remove('hidden');
+                panelSettle.classList.add('hidden');
+            });
+
+            tabSettle.addEventListener('click', () => {
+                tabSettle.className = "py-3 border-b-2 border-awkward-500 text-awkward-400 flex items-center gap-2";
+                tabCreate.className = "py-3 border-b-2 border-transparent text-gray-400 hover:text-white flex items-center gap-2";
+                panelSettle.classList.remove('hidden');
+                panelCreate.classList.add('hidden');
+                renderAdminSettleList();
+            });
+
+            document.getElementById('reset-app-btn').addEventListener('click', () => {
+                if (confirm("Are you sure you want to clear all markets and user data?")) {
+                    localStorage.removeItem('akward_markets_v4');
+                    localStorage.removeItem('akward_users_v4');
+                    localStorage.removeItem('akward_current_user_v4');
+                    location.reload();
+                }
+            });
+        }
+
+        function showToast(msg, color = 'indigo') {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-message').innerText = msg;
+
+            toast.className = color === 'red'
+                ? "fixed bottom-6 right-6 bg-red-600 text-white font-bold px-4 py-3 rounded-xl shadow-2xl transition-all transform translate-y-0 opacity-100 z-50 flex items-center gap-2"
+                : "fixed bottom-6 right-6 bg-awkward-500 text-white font-bold px-4 py-3 rounded-xl shadow-2xl transition-all transform translate-y-0 opacity-100 z-50 flex items-center gap-2";
+
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+
+        /* Window Load Initialization */
+        window.onload = function() {
+            checkAuthStatus();
+            setupNavigation();
+            setupAdminEngine();
+
+            document.getElementById('auth-form').addEventListener('submit', (e) => {
+                e.preventDefault();
+                const name = document.getElementById('auth-username').value;
+                switchUser(name);
+            });
+
+            document.getElementById('user-profile-badge').addEventListener('click', () => {
+                document.getElementById('auth-modal').classList.remove('hidden');
+            });
+
+            document.getElementById('stake-input').addEventListener('input', renderBetSlip);
+            document.getElementById('max-stake-btn').addEventListener('click', () => {
+                if (currentUserId && usersState[currentUserId]) {
+                    document.getElementById('stake-input').value = usersState[currentUserId].balance;
+                    renderBetSlip();
+                }
+            });
+
+            document.getElementById('clear-slip-btn').addEventListener('click', () => {
+                betSlipSelections = [];
+                renderBetSlip();
+                renderMarkets();
+            });
+
+            document.getElementById('place-bet-btn').addEventListener('click', handlePlaceBet);
+
+            renderFilterNav();
+            renderMarkets();
+            renderUserWagersHistory();
+        };
+    </script>
+</body>
+</html>
